@@ -4,6 +4,8 @@ import game_framework
 
 from pico2d import *
 
+import game_world
+
 # zombie Run Speed
 PIXEL_PER_METER = (10.0 / 0.3)  # 10 pixel 30 cm
 RUN_SPEED_KMPH = 10.0  # Km / Hour
@@ -32,6 +34,7 @@ class Zombie:
         self.load_images()
         self.frame = random.randint(0, 9)
         self.dir = random.choice([-1,1])
+        self.size = 200
 
 
     def update(self):
@@ -47,11 +50,24 @@ class Zombie:
 
     def draw(self):
         if self.dir < 0:
-            Zombie.images['Walk'][int(self.frame)].composite_draw(0, 'h', self.x, self.y, 200, 200)
+            Zombie.images['Walk'][int(self.frame)].composite_draw(0, 'h', self.x, self.y, self.size, self.size)
         else:
-            Zombie.images['Walk'][int(self.frame)].draw(self.x, self.y, 200, 200)
-
+            Zombie.images['Walk'][int(self.frame)].draw(self.x, self.y, self.size, self.size)
+        draw_rectangle(*self.get_bb())  # tuple 형식을 풀어서 넘기기
 
     def handle_event(self, event):
         pass
 
+    def get_bb(self):
+        if self.size == 200:
+            return self.x - 100, self.y - 100, self.x + 100, self.y + 100
+        else:
+            return self.x - 50, self.y - 50, self.x + 50, self.y + 50
+
+    def handle_collision(self, group, other):
+        if group == 'zombie:ball':
+            if self.size == 200:
+                self.size = self.size / 2
+                self.y -= 50
+            else:
+                game_world.remove_object(self)

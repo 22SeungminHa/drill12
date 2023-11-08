@@ -1,11 +1,13 @@
 objects = [[] for _ in range(4)]
 
+
 # fill here
 
-def add_object(o, depth = 0):
+def add_object(o, depth=0):
     objects[depth].append(o)
 
-def add_objects(ol, depth = 0):
+
+def add_objects(ol, depth=0):
     objects[depth] += ol
 
 
@@ -20,13 +22,35 @@ def render():
         for o in layer:
             o.draw()
 
-# fill here
+
+collision_pairs = {}
+
+
+# 충돌 그룹 정보를 dictionary 생성 (a랑 b는 충돌체크를 해야 돼!)
+def add_collision_pair(group, a, b):
+    if group not in collision_pairs:  # dictionary key 그룹이 존재하지 않다면 새로운 그룹 생성
+        print(f'Added new group {group}')
+        collision_pairs[group] = [[], []]
+    if a:  # 나중에 생성되는 객체에 대해서도 그룹을 등록할 수 있게 해야 하므로
+        collision_pairs[group][0].append(a)
+    if b:
+        collision_pairs[group][1].append(b)
+
+
+def remove_collision_object(o):
+    for pairs in collision_pairs.values():
+        if o in pairs[0]:
+            pairs[0].remove(o)
+        if o in pairs[1]:
+            pairs[1].remove(o)
 
 
 def remove_object(o):
     for layer in objects:
         if o in layer:
             layer.remove(o)
+            remove_collision_object(o)
+            del o
             return
     raise ValueError('Cannot delete non existing object')
 
@@ -36,7 +60,22 @@ def clear():
         layer.clear()
 
 
+def collide(a, b):
+    left_a, bottom_a, right_a, top_a = a.get_bb()
+    left_b, bottom_b, right_b, top_b = b.get_bb()
 
-# fill here
+    if left_a > right_b: return False
+    if right_a < left_b: return False
+    if top_a < bottom_b: return False
+    if bottom_a > top_b: return False
+
+    return True
 
 
+def handle_collisions():
+    for group, pairs in collision_pairs.items():
+        for a in pairs[0]:
+            for b in pairs[1]:
+                if collide(a, b):
+                    a.handle_collision(group, b)
+                    b.handle_collision(group, a)
